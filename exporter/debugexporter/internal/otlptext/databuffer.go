@@ -312,6 +312,7 @@ func (b *dataBuffer) logProfileSamples(ss pprofile.SampleSlice, attrs pprofile.A
 		b.logEntry("    Sample #%d", i)
 		sample := ss.At(i)
 
+		b.logEntry("        Location start: %d", sample.LocationsStartIndex())
 		b.logEntry("        Location length: %d", sample.LocationsLength())
 		b.logEntry("        Value: %d", sample.Value().AsRaw())
 
