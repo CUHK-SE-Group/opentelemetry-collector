@@ -1,4 +1,3 @@
-level: "none"
 processors:
   - batch:
       exporter:
@@ -10,3 +9,10 @@ processors:
   - simple:
       exporter:
         console: {}
+  - simple:
+      exporter:
+        otlp:
+          protocol: http/protobuf
+          endpoint: http://127.0.0.1:4317
+          headers:
+            "key1": "value1"

@@ -37,13 +37,12 @@ type logsConfigV020 struct {
 }
 
 func headersV02ToV03(in configv02.Headers) []config.NameStringValuePair {
-	headers := make([]config.NameStringValuePair, len(in))
-	idx := 0
+	headers := make([]config.NameStringValuePair, 0, len(in))
 	for k, v := range in {
-		headers[idx] = config.NameStringValuePair{
+		headers = append(headers, config.NameStringValuePair{
 			Name:  k,
 			Value: &v,
-		}
+		})
 	}
 	return headers
 }
@@ -57,7 +56,7 @@ func otlpV02ToV03(in *configv02.OTLP) *config.OTLP {
 		ClientCertificate: in.ClientCertificate,
 		ClientKey:         in.ClientKey,
 		Compression:       in.Compression,
-		Endpoint:          &in.Endpoint,
+		Endpoint:          normalizeEndpoint(in.Endpoint),
 		Insecure:          in.Insecure,
 		Protocol:          &in.Protocol,
 		Timeout:           in.Timeout,
@@ -74,7 +73,7 @@ func otlpMetricV02ToV03(in *configv02.OTLPMetric) *config.OTLPMetric {
 		ClientCertificate: in.ClientCertificate,
 		ClientKey:         in.ClientKey,
 		Compression:       in.Compression,
-		Endpoint:          &in.Endpoint,
+		Endpoint:          normalizeEndpoint(in.Endpoint),
 		Insecure:          in.Insecure,
 		Protocol:          &in.Protocol,
 		Timeout:           in.Timeout,
