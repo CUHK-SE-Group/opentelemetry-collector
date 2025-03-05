@@ -323,6 +323,10 @@ func (b *dataBuffer) logProfileSamples(ss pprofile.SampleSlice, attrs pprofile.A
 				b.logEntry("             -> %s: %s", attr.Key(), attr.Value().AsRaw())
 			}
 		}
+		for t := 0; t < sample.TimestampsUnixNano().Len(); t++ {
+			time := sample.TimestampsUnixNano().At(t)
+			b.logEntry("        Timestamp: %d", time)
+		}
 	}
 }
 
