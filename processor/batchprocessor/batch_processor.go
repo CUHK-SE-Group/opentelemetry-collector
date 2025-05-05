@@ -20,10 +20,13 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumererror"
+	"go.opentelemetry.io/collector/consumer/xconsumer"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
+	"go.opentelemetry.io/collector/processor/xprocessor"
 )
 
 // errTooManyBatchers is returned when the MetadataCardinalityLimit has been reached.
@@ -571,4 +574,75 @@ func (bl *batchLogs) add(ld plog.Logs) {
 	}
 	bl.logCount += newLogsCount
 	ld.ResourceLogs().MoveAndAppendTo(bl.logData.ResourceLogs())
+}
+
+type profilesBatchProcessor struct {
+	*batchProcessor[pprofile.Profiles]
+}
+
+// newProfilesBatchProcessor creates a new batch processor that batches profiles by size or with timeout
+func newProfilesBatchProcessor(set processor.Settings, next xconsumer.Profiles, cfg *Config) (xprocessor.Profiles, error) {
+	bp, err := newBatchProcessor(set, cfg, func() batch[pprofile.Profiles] { return newBatchProfiles(next) })
+	if err != nil {
+		return nil, err
+	}
+	return &profilesBatchProcessor{batchProcessor: bp}, nil
+}
+
+func (p *profilesBatchProcessor) ConsumeProfiles(ctx context.Context, pp pprofile.Profiles) error {
+	return p.batcher.consume(ctx, pp)
+}
+
+// batchProfiles implements the batch interface for profiles
+type batchProfiles struct {
+	nextConsumer xconsumer.Profiles
+	profileData  pprofile.Profiles
+	profileCount int
+	sizer        pprofile.Sizer
+}
+
+func newBatchProfiles(nextConsumer xconsumer.Profiles) *batchProfiles {
+	return &batchProfiles{
+		nextConsumer: nextConsumer,
+		profileData:  pprofile.NewProfiles(),
+		sizer:        &pprofile.ProtoMarshaler{},
+	}
+}
+
+func (bp *batchProfiles) add(pp pprofile.Profiles) {
+	newProfileCount := profileCount(pp)
+	if newProfileCount == 0 {
+		return
+	}
+	bp.profileCount += newProfileCount
+	pp.ResourceProfiles().MoveAndAppendTo(bp.profileData.ResourceProfiles())
+}
+
+func (bp *batchProfiles) sizeBytes(pp pprofile.Profiles) int {
+	return bp.sizer.ProfilesSize(pp)
+}
+
+func (bp *batchProfiles) export(ctx context.Context, pp pprofile.Profiles) error {
+	return bp.nextConsumer.ConsumeProfiles(ctx, pp)
+}
+
+func (bp *batchProfiles) split(sendBatchMaxSize int) (int, pprofile.Profiles) {
+	var pp pprofile.Profiles
+	var sent int
+	if sendBatchMaxSize > 0 && bp.itemCount() > sendBatchMaxSize {
+		pp = splitProfiles(sendBatchMaxSize, bp.profileData)
+		// We know exactly how many profiles were split
+		sent = sendBatchMaxSize
+		bp.profileCount -= sent
+	} else {
+		pp = bp.profileData
+		sent = bp.profileCount
+		bp.profileData = pprofile.NewProfiles()
+		bp.profileCount = 0
+	}
+	return sent, pp
+}
+
+func (bp *batchProfiles) itemCount() int {
+	return bp.profileCount
 }

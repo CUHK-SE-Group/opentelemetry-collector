@@ -11,8 +11,10 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/consumer/xconsumer"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/batchprocessor/internal/metadata"
+	"go.opentelemetry.io/collector/processor/xprocessor"
 )
 
 const (
@@ -25,14 +27,19 @@ const (
 	defaultMetadataCardinalityLimit = 1000
 )
 
+type factory struct{}
+
 // NewFactory returns a new factory for the Batch processor.
 func NewFactory() processor.Factory {
-	return processor.NewFactory(
+	f := &factory{}
+	return xprocessor.NewFactory(
 		metadata.Type,
 		createDefaultConfig,
-		processor.WithTraces(createTraces, metadata.TracesStability),
-		processor.WithMetrics(createMetrics, metadata.MetricsStability),
-		processor.WithLogs(createLogs, metadata.LogsStability))
+		xprocessor.WithTraces(f.createTraces, metadata.TracesStability),
+		xprocessor.WithMetrics(f.createMetrics, metadata.MetricsStability),
+		xprocessor.WithLogs(f.createLogs, metadata.LogsStability),
+		xprocessor.WithProfiles(f.createProfiles, metadata.ProfilesStability),
+	)
 }
 
 func createDefaultConfig() component.Config {
@@ -43,7 +50,7 @@ func createDefaultConfig() component.Config {
 	}
 }
 
-func createTraces(
+func (f *factory) createTraces(
 	_ context.Context,
 	set processor.Settings,
 	cfg component.Config,
@@ -52,7 +59,7 @@ func createTraces(
 	return newTracesBatchProcessor(set, nextConsumer, cfg.(*Config))
 }
 
-func createMetrics(
+func (f *factory) createMetrics(
 	_ context.Context,
 	set processor.Settings,
 	cfg component.Config,
@@ -61,11 +68,20 @@ func createMetrics(
 	return newMetricsBatchProcessor(set, nextConsumer, cfg.(*Config))
 }
 
-func createLogs(
+func (f *factory) createLogs(
 	_ context.Context,
 	set processor.Settings,
 	cfg component.Config,
 	nextConsumer consumer.Logs,
 ) (processor.Logs, error) {
 	return newLogsBatchProcessor(set, nextConsumer, cfg.(*Config))
+}
+
+func (f *factory) createProfiles(
+	_ context.Context,
+	set processor.Settings,
+	cfg component.Config,
+	nextConsumer xconsumer.Profiles,
+) (xprocessor.Profiles, error) {
+	return newProfilesBatchProcessor(set, nextConsumer, cfg.(*Config))
 }

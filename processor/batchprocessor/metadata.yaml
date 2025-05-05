@@ -5,6 +5,7 @@ status:
   disable_codecov_badge: true
   class: processor
   stability:
+    alpha: [profiles]
     beta: [ traces, metrics, logs ]
   distributions: [ core, contrib, k8s ]
 

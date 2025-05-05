@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processortest"
 )
@@ -149,4 +150,13 @@ func generateLifecycleTestTraces() ptrace.Traces {
 	span.SetStartTimestamp(pcommon.NewTimestampFromTime(time.Now().Add(-1 * time.Second)))
 	span.SetEndTimestamp(pcommon.NewTimestampFromTime(time.Now()))
 	return traces
+}
+
+func generateLifecycleTestProfiles() pprofile.Profiles {
+	profiles := pprofile.NewProfiles()
+	rp := profiles.ResourceProfiles().AppendEmpty()
+	rp.Resource().Attributes().PutStr("resource", "R1")
+	sp := rp.ScopeProfiles().AppendEmpty()
+	sp.Profiles().AppendEmpty()
+	return profiles
 }
