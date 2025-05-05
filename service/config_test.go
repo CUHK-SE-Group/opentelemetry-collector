@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	config "go.opentelemetry.io/contrib/config/v0.3.0"
+	config "go.opentelemetry.io/contrib/otelconf/v0.3.0"
 	"go.uber.org/zap/zapcore"
 
 	"go.opentelemetry.io/collector/component"
@@ -124,7 +124,7 @@ func TestConfmapMarshalConfig(t *testing.T) {
 									"host": "localhost",
 									"port": 8888,
 									"with_resource_constant_labels": map[string]any{
-										"included": []any(nil),
+										"included": []any{},
 									},
 									"without_scope_info":  true,
 									"without_type_suffix": true,
@@ -154,12 +154,14 @@ func generateConfig() *Config {
 			},
 			Metrics: telemetry.MetricsConfig{
 				Level: configtelemetry.LevelNormal,
-				Readers: []config.MetricReader{
-					{
-						Pull: &config.PullMetricReader{Exporter: config.PullMetricExporter{Prometheus: &config.Prometheus{
-							Host: newPtr("localhost"),
-							Port: newPtr(8080),
-						}}},
+				MeterProvider: config.MeterProvider{
+					Readers: []config.MetricReader{
+						{
+							Pull: &config.PullMetricReader{Exporter: config.PullMetricExporter{Prometheus: &config.Prometheus{
+								Host: newPtr("localhost"),
+								Port: newPtr(8080),
+							}}},
+						},
 					},
 				},
 			},

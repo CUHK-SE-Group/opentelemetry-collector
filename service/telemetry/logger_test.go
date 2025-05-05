@@ -8,9 +8,10 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
-	config "go.opentelemetry.io/contrib/config/v0.3.0"
+	config "go.opentelemetry.io/contrib/otelconf/v0.3.0"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -39,7 +40,7 @@ func TestNewLogger(t *testing.T) {
 					InitialFields:     map[string]any{"fieldKey": "filed-value"},
 				},
 			},
-			wantCoreType: "*zapcore.ioCore",
+			wantCoreType: "*componentattribute.consoleCoreWithAttributes",
 		},
 		{
 			name: "log config with processors",
@@ -62,11 +63,33 @@ func TestNewLogger(t *testing.T) {
 					},
 				},
 			},
-			wantCoreType: "*zapcore.levelFilterCore",
+			wantCoreType: "*componentattribute.otelTeeCoreWithAttributes",
+		},
+		{
+			name: "log config with sampling",
+			cfg: Config{
+				Logs: LogsConfig{
+					Level:       zapcore.InfoLevel,
+					Development: false,
+					Encoding:    "console",
+					Sampling: &LogsSamplingConfig{
+						Enabled:    true,
+						Tick:       10 * time.Second,
+						Initial:    10,
+						Thereafter: 100,
+					},
+					OutputPaths:       []string{"stderr"},
+					ErrorOutputPaths:  []string{"stderr"},
+					DisableCaller:     false,
+					DisableStacktrace: false,
+					InitialFields:     map[string]any(nil),
+				},
+			},
+			wantCoreType: "*componentattribute.wrapperCoreWithAttributes",
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		testCoreType := func(t *testing.T, wantCoreType any) {
 			sdk, _ := config.NewSDK(config.WithOpenTelemetryConfiguration(config.OpenTelemetryConfiguration{LoggerProvider: &config.LoggerProvider{
 				Processors: tt.cfg.Logs.Processors,
 			}}))
@@ -74,11 +97,11 @@ func TestNewLogger(t *testing.T) {
 			l, lp, err := newLogger(Settings{SDK: &sdk}, tt.cfg)
 			if tt.wantErr != nil {
 				require.ErrorContains(t, err, tt.wantErr.Error())
-				require.Nil(t, tt.wantCoreType)
+				require.Nil(t, wantCoreType)
 			} else {
 				require.NoError(t, err)
 				gotType := reflect.TypeOf(l.Core()).String()
-				require.Equal(t, tt.wantCoreType, gotType)
+				require.Equal(t, wantCoreType, gotType)
 				type shutdownable interface {
 					Shutdown(context.Context) error
 				}
@@ -86,6 +109,8 @@ func TestNewLogger(t *testing.T) {
 					require.NoError(t, prov.Shutdown(context.Background()))
 				}
 			}
-		})
+		}
+
+		testCoreType(t, tt.wantCoreType)
 	}
 }

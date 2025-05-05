@@ -162,7 +162,7 @@ func TestGraphStartStopComponentError(t *testing.T) {
 		F: r1,
 		T: e1,
 	})
-	require.EqualError(t, pg.StartAll(context.Background(), &Host{Reporter: status.NewReporter(func(*componentstatus.InstanceID, *componentstatus.Event) {}, func(error) {})}), "foo")
+	require.ErrorIs(t, pg.StartAll(context.Background(), &Host{Reporter: status.NewReporter(func(*componentstatus.InstanceID, *componentstatus.Event) {}, func(error) {})}), r1.startErr)
 	assert.EqualError(t, pg.ShutdownAll(context.Background(), statustest.NewNopStatusReporter()), "bar")
 }
 
@@ -306,10 +306,10 @@ func TestStatusReportedOnStartupShutdown(t *testing.T) {
 
 	// compare two maps of status events ignoring timestamp
 	assertEqualStatuses := func(t *testing.T, evMap1, evMap2 map[*componentstatus.InstanceID][]*componentstatus.Event) {
-		assert.Equal(t, len(evMap1), len(evMap2))
+		assert.Len(t, evMap2, len(evMap1))
 		for id, evts1 := range evMap1 {
 			evts2 := evMap2[id]
-			assert.Equal(t, len(evts1), len(evts2))
+			assert.Len(t, evts2, len(evts1))
 			for i := 0; i < len(evts1); i++ {
 				ev1 := evts1[i]
 				ev2 := evts2[i]
@@ -432,7 +432,7 @@ func TestStatusReportedOnStartupShutdown(t *testing.T) {
 			}
 			pg.componentGraph.SetEdge(simple.Edge{F: e0, T: e1})
 
-			assert.Equal(t, tt.startupErr, pg.StartAll(context.Background(), &Host{Reporter: rep}))
+			require.ErrorIs(t, pg.StartAll(context.Background(), &Host{Reporter: rep}), tt.startupErr)
 			assert.Equal(t, tt.shutdownErr, pg.ShutdownAll(context.Background(), rep))
 			assertEqualStatuses(t, tt.expectedStatuses, actualStatuses)
 		})

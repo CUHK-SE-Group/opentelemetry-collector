@@ -21,6 +21,8 @@ func TestInstrumentationScope_MoveTo(t *testing.T) {
 	ms.MoveTo(dest)
 	assert.Equal(t, NewInstrumentationScope(), ms)
 	assert.Equal(t, generateTestInstrumentationScope(), dest)
+	dest.MoveTo(dest)
+	assert.Equal(t, generateTestInstrumentationScope(), dest)
 	sharedState := internal.StateReadOnly
 	assert.Panics(t, func() { ms.MoveTo(newInstrumentationScope(&otlpcommon.InstrumentationScope{}, &sharedState)) })
 	assert.Panics(t, func() { newInstrumentationScope(&otlpcommon.InstrumentationScope{}, &sharedState).MoveTo(dest) })
@@ -40,7 +42,7 @@ func TestInstrumentationScope_CopyTo(t *testing.T) {
 
 func TestInstrumentationScope_Name(t *testing.T) {
 	ms := NewInstrumentationScope()
-	assert.Equal(t, "", ms.Name())
+	assert.Empty(t, ms.Name())
 	ms.SetName("test_name")
 	assert.Equal(t, "test_name", ms.Name())
 	sharedState := internal.StateReadOnly
@@ -49,7 +51,7 @@ func TestInstrumentationScope_Name(t *testing.T) {
 
 func TestInstrumentationScope_Version(t *testing.T) {
 	ms := NewInstrumentationScope()
-	assert.Equal(t, "", ms.Version())
+	assert.Empty(t, ms.Version())
 	ms.SetVersion("test_version")
 	assert.Equal(t, "test_version", ms.Version())
 	sharedState := internal.StateReadOnly

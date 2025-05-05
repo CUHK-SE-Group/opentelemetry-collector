@@ -22,6 +22,8 @@ func TestAttribute_MoveTo(t *testing.T) {
 	ms.MoveTo(dest)
 	assert.Equal(t, NewAttribute(), ms)
 	assert.Equal(t, generateTestAttribute(), dest)
+	dest.MoveTo(dest)
+	assert.Equal(t, generateTestAttribute(), dest)
 	sharedState := internal.StateReadOnly
 	assert.Panics(t, func() { ms.MoveTo(newAttribute(&v1.KeyValue{}, &sharedState)) })
 	assert.Panics(t, func() { newAttribute(&v1.KeyValue{}, &sharedState).MoveTo(dest) })
@@ -41,7 +43,7 @@ func TestAttribute_CopyTo(t *testing.T) {
 
 func TestAttribute_Key(t *testing.T) {
 	ms := NewAttribute()
-	assert.Equal(t, "", ms.Key())
+	assert.Empty(t, ms.Key())
 	ms.SetKey("key")
 	assert.Equal(t, "key", ms.Key())
 	sharedState := internal.StateReadOnly

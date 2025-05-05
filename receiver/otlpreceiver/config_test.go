@@ -119,9 +119,9 @@ func TestUnmarshalConfig(t *testing.T) {
 					},
 				},
 				HTTP: &HTTPConfig{
-					ServerConfig: &confighttp.ServerConfig{
+					ServerConfig: confighttp.ServerConfig{
 						Auth: &confighttp.AuthConfig{
-							Authentication: configauth.Authentication{
+							Config: configauth.Config{
 								AuthenticatorID: component.MustNewID("test"),
 							},
 						},
@@ -164,7 +164,7 @@ func TestUnmarshalConfigUnix(t *testing.T) {
 					Keepalive:      configgrpc.NewDefaultKeepaliveServerConfig(),
 				},
 				HTTP: &HTTPConfig{
-					ServerConfig: &confighttp.ServerConfig{
+					ServerConfig: confighttp.ServerConfig{
 						Endpoint:        "/tmp/http_otlp.sock",
 						CORS:            confighttp.NewDefaultCORSConfig(),
 						ResponseHeaders: map[string]configopaque.String{},

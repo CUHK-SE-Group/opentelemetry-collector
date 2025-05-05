@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
+	yaml "sigs.k8s.io/yaml/goyaml.v3"
 
 	"go.opentelemetry.io/collector/confmap"
 )
@@ -73,7 +73,7 @@ func TestConfigProviderYaml(t *testing.T) {
 	configNop, err := newConfig(yamlBytes, factories)
 	require.NoError(t, err)
 
-	assert.EqualValues(t, configNop, cfg)
+	assert.Equal(t, configNop, cfg)
 }
 
 func TestConfigProviderFile(t *testing.T) {
@@ -103,5 +103,5 @@ func TestConfigProviderFile(t *testing.T) {
 	configNop, err := newConfig(yamlBytes, factories)
 	require.NoError(t, err)
 
-	assert.EqualValues(t, configNop, cfg)
+	assert.Equal(t, configNop, cfg)
 }

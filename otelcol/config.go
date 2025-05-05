@@ -9,6 +9,7 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/service"
+	"go.opentelemetry.io/collector/service/pipelines"
 )
 
 var (
@@ -35,6 +36,9 @@ type Config struct {
 	Extensions map[component.ID]component.Config `mapstructure:"extensions"`
 
 	Service service.Config `mapstructure:"service"`
+
+	// prevent unkeyed literal initialization
+	_ struct{}
 }
 
 // Validate returns an error if the config is invalid.
@@ -50,13 +54,13 @@ func (cfg *Config) Validate() error {
 
 	// Currently, there is no default receiver enabled.
 	// The configuration must specify at least one receiver to be valid.
-	if len(cfg.Receivers) == 0 {
+	if !pipelines.AllowNoPipelines.IsEnabled() && len(cfg.Receivers) == 0 {
 		return errMissingReceivers
 	}
 
 	// Currently, there is no default exporter enabled.
 	// The configuration must specify at least one exporter to be valid.
-	if len(cfg.Exporters) == 0 {
+	if !pipelines.AllowNoPipelines.IsEnabled() && len(cfg.Exporters) == 0 {
 		return errMissingExporters
 	}
 

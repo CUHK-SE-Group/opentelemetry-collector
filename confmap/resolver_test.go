@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v3"
+	yaml "sigs.k8s.io/yaml/goyaml.v3"
 
 	"go.opentelemetry.io/collector/featuregate"
 )
@@ -280,8 +280,8 @@ func TestBackwardsCompatibilityForFilePath(t *testing.T) {
 		},
 		{
 			name:       "windows_C",
-			location:   `C:\test`,
-			errMessage: `file:C:\test`,
+			location:   `c:\test`,
+			errMessage: `file:c:\test`,
 		},
 		{
 			name:       "windows_z",
@@ -290,8 +290,8 @@ func TestBackwardsCompatibilityForFilePath(t *testing.T) {
 		},
 		{
 			name:       "file_windows",
-			location:   `file:C:\test`,
-			errMessage: `file:C:\test`,
+			location:   `file:c:\test`,
+			errMessage: `file:c:\test`,
 		},
 		{
 			name:           "invalid_scheme",
@@ -489,14 +489,14 @@ func runScenario(t *testing.T, path string) {
 			for _, c := range tt.Configs {
 				// store configs into a temp file. This makes it easier for us to test feature gate functionality
 				file, err := os.CreateTemp(t.TempDir(), "*.yaml")
+				defer func() { require.NoError(t, file.Close()) }()
 				require.NoError(t, err)
 				b, err := json.Marshal(c)
 				require.NoError(t, err)
 				n, err := file.Write(b)
 				require.NoError(t, err)
-				require.Positive(t, n, 0)
+				require.Positive(t, n)
 				configFiles = append(configFiles, file.Name())
-				file.Close()
 			}
 
 			resolver, err := NewResolver(ResolverSettings{
